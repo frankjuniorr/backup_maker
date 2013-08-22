@@ -1,10 +1,11 @@
+#!/bin/bash
 # ----------------------------------------------------------------------------
-# <oescrição>
+# parser para ler arquivos de configuração retornando somente as flags
 #
-# Uso: <uso>
-# Ex.: <exemplo>
+# Uso: parser.sh <file.config>
+# Ex.: ./parser.sh backup_maker.config
 #
-# Autor: Frank <frank (a) gmail com>
+# Autor: Frank <frankcbjunior (a) gmail com>
 # Desde: 20-8-2013
 # Versão: 1
 # ----------------------------------------------------------------------------
@@ -17,7 +18,6 @@ valor=""
 retorno=""
 
 # O arquivo deve existir e ser legível
-echo "[DEBUG] $CONFIG"
 if [ -z "$CONFIG" ]; then
 		echo uso: parser arquivo.conf
 		exit 1
