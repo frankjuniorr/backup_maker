@@ -3,14 +3,47 @@ backup_maker
 
 ## Descrição
 O backup_maker, nada mais é do q um script de backup, feito em Shell Script,
-que copia arquivos previamente configurados pelo usuário para um destino de backup.
+que copia arquivospara um destino de backup.
 Contando com ajuda de um lembrete, também feito em shell script para avisar quando
 estiver no tempo de fazer outro backup, via email.
-Esse script deve usar, e deve ser um wrapper para o comando `rsync`.
+Esse script é um wrapper para o comando `rsync`.
 
 ## Uso
-Depois de configurar o script pelo `backup_maker.config`, é só chamar ele:
-`./backup_maker`
+
+### Sintaxe:
+`./backup_maker <origem> <destino>`
+
+### exemplos:
+
+modo simples. Uma Origem pra um Destino
+
+`./backup_maker ~/Photos /media/hd_externo`
+
+modo composto. Vários diretórios de origens, dentro de um arquivo [orbigatoriamente] chamado de "origens.txt".
+
+OBS: Só pode ter apenas 1 destino
+
+`./backup_maker origens.txt /media/hd_externo`
+
+### Dica:
+Se quiser copiar a pasta toda, passe a origem SEM a barra do final, assim:
+```
+./backup_maker ~/Photos /media/hd_externo
+
+ls /media/hd_externo
+Photos
+```
+
+Se quiser copiar apenas os arquivos, passe a origem COM a barra do final, assim:
+```
+./backup_maker ~/Photos/ /media/hd_externo
+
+ls /media/hd_externo
+foto1.jpg
+foto2.jpg
+foto3.jpg
+```
+
 
 
 ## Como contribuir?
