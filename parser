@@ -10,6 +10,8 @@
 # Versão: 1
 # ----------------------------------------------------------------------------
 
+# Variáveis
+# ----------------------------------------------------------------------------
 # O arquivo de configuração é indicado na linha de comando
 CONFIG=$1
 
@@ -17,15 +19,10 @@ chave=""
 valor=""
 retorno=""
 
-# O arquivo deve existir e ser legível
-if [ -z "$CONFIG" ]; then
-		echo uso: parser arquivo.conf
-		exit 1
-elif [ ! -r "$CONFIG" ]; then
-		echo Erro: Não consigo ler o arquivo $CONFIG
-		exit 1
-fi
-
+# funções
+# ----------------------------------------------------------------------------
+# função com o loop para extrais dados de arquivos de configuração
+parser_config(){
 # Loop para ler a linha de configuração, guardando em $LINHA
 while read LINHA; do
 
@@ -48,3 +45,46 @@ while read LINHA; do
 		echo -e "$retorno$chave=\"$valor\"" | sed 's/\ #.*/"/g'
 
 done < "$CONFIG"
+}
+
+# função para extrair os diretorios de origens do arquivo 'origens.txt'
+parser_origens(){
+# Loop para ler a linha de configuração, guardando em $LINHA
+while read LINHA; do
+
+		# Ignorando as linhas de comentário
+		[ "$(echo $LINHA | cut -c1)" = '#' ] && continue
+
+		# Ignorando linhas em branco
+		[ "$LINHA" ] || continue
+
+		# Guardando cada palavra da linha em $1, $2, $3...
+		set - $LINHA
+
+		# Extraindo os dados (chaves sempre maiusculas)
+		chave=$(echo $1)
+
+		# capturando cada linha do arquivo (chave e valor) e atribuindo a variavel $retorno
+		# o sed esta retirando os comentários de 1 linha
+		echo -e "$retorno$chave" | sed 's/\ #.*/"/g'
+
+done < "$CONFIG"
+}
+
+# Main
+# ----------------------------------------------------------------------------
+# O arquivo deve existir e ser legível
+if [ -z "$CONFIG" ]; then
+		echo uso: parser arquivo.conf
+		exit 1
+elif [ ! -r "$CONFIG" ]; then
+		echo Erro: Não consigo ler o arquivo $CONFIG
+		exit 1
+fi
+
+if [ "$CONFIG" = 'origens.txt' ];then
+	parser_origens
+else
+	parser_config
+fi
+
