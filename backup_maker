@@ -231,6 +231,9 @@ function calcular_tempo(){
 }
 
 # função para calcular a quantidade de bytes tranferido (em GB)
+# FIXME acho que dá pra substituir essa função, pq a propria saida
+# do 'rsync' mostra a quantidade tranferida.
+# Conferir o arquivo 'log/transf.log'
 function calcular_tamanho(){
 	
 	local linha=""
