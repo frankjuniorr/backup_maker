@@ -1,0 +1,27 @@
+sending incremental file list
+origem/
+origem/arquivo.txt
+           6 100%    0.00kB/s    0:00:00             6 100%    0.00kB/s    0:00:00 (xfer#1, to-check=1/3)
+origem/arquivo2.txt
+           0 100%    0.00kB/s    0:00:00 (xfer#2, to-check=0/3)
+
+sent 182 bytes  received 54 bytes  472.00 bytes/sec
+total size is 6  speedup is 0.03
+sending incremental file list
+origem2/
+origem2/file.txt
+           0 100%    0.00kB/s    0:00:00 (xfer#1, to-check=1/3)
+origem2/file2.txt
+           0 100%    0.00kB/s    0:00:00 (xfer#2, to-check=0/3)
+
+sent 170 bytes  received 54 bytes  448.00 bytes/sec
+total size is 0  speedup is 0.00
+sending incremental file list
+origem3/
+origem3/fotos.zip
+      32.77K   0%    0.00kB/s    0:00:00        53.81M   3%   51.28MB/s    0:00:27       105.64M   7%   50.38MB/s    0:00:27       143.72M   9%   45.71MB/s    0:00:29       178.81M  11%   40.85MB/s    0:00:31       217.87M  14%   37.47MB/s    0:00:33       257.00M  17%   34.57MB/s    0:00:35       309.89M  20%   37.00MB/s    0:00:31       347.64M  23%   37.86MB/s    0:00:29       411.07M  27%   43.09MB/s    0:00:24       436.27M  28%   39.98MB/s    0:00:26       436.31M  28%   23.19MB/s    0:00:45       474.78M  31%   23.99MB/s    0:00:42       539.53M  35%   24.09MB/s    0:00:39       582.55M  38%   23.27MB/s    0:00:38       627.90M  41%   36.80MB/s    0:00:23       662.18M  43%   36.00MB/s    0:00:22       710.18M  47%   32.60MB/s    0:00:23       773.10M  51%   42.81MB/s    0:00:16       819.76M  54%   42.27MB/s    0:00:15       826.08M  54%   35.25MB/s    0:00:18       859.34M  57%   32.56MB/s    0:00:19       902.33M  59%   29.32MB/s    0:00:20       935.10M  62%   25.93MB/s    0:00:21       988.84M  65%   37.49MB/s    0:00:13         1.02G  67%   37.23MB/s    0:00:12         1.03G  68%   27.37MB/s    0:00:17         1.04G  69%   24.00MB/s    0:00:18         1.08G  71%   19.15MB/s    0:00:21         1.08G  71%   10.46MB/s    0:00:40         1.11G  73%   15.66MB/s    0:00:24         1.15G  76%   20.82MB/s    0:00:16         1.20G  79%   23.26MB/s    0:00:13         1.20G  79%   26.87MB/s    0:00:11         1.23G  81%   27.03MB/s    0:00:10         1.23G  81%   15.80MB/s    0:00:17         1.24G  82%    8.36MB/s    0:00:31         1.27G  84%   15.06MB/s    0:00:15         1.29G  85%   13.30MB/s    0:00:15         1.33G  88%   24.37MB/s    0:00:07         1.37G  91%   32.64MB/s    0:00:03         1.41G  93%   33.11MB/s    0:00:02         1.45G  96%   36.79MB/s    0:00:01         1.49G  98%   37.33MB/s    0:00:00         1.51G 100%   29.79MB/s    0:00:48 (xfer#1, to-check=1/3)
+origem3/fotos_sangue_de_barro.zip
+      32.77K   1%  123.08kB/s    0:00:16         2.09M 100%    7.20MB/s    0:00:00 (xfer#2, to-check=0/3)
+
+sent 1.51G bytes  received 54 bytes  31.11M bytes/sec
+total size is 1.51G  speedup is 1.00

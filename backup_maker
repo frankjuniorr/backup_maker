@@ -5,10 +5,10 @@
 # Faz backup usando o comando rsync do unix. 
 # Configurações são feitas no arquivo de configuração: backup_maker.config
 #
-# Uso: backup_maker.sh 
-# Ex.: ./backup_maker.sh
+# Uso: backup_maker.sh <origem> <destino>
+# Ex.: ./backup_maker.sh ~/Documents ~/media/HD_externo
 #                                                                                                                               
-# Autor: Frank <frankcbjunior (a) gmail com>
+# Autor: Frank junior <frankcbjunior@gmail.com>
 # Desde: 20-8-2013
 # Versão: 1
 # ----------------------------------------------------------------------------
@@ -18,13 +18,19 @@
 # TODO: melhorar esse acesso aos arquivos de parser, e de configuração
 CONFIG="backup_maker.config" 		# arquivo de configuração
 PARSER_FILE="parser"				# arquivo de parser   
-              
+
+# Parametros
 ORIGEM="$1"
 DESTINO="$2"
 
+#tempo
+antes=""
+depois=""
+tempo_do_backup=""
+
 # cores
 cor_amarelo="\033[33m"
-cor_branco="\033[37m"
+cor_verde="\033[32m"
 cor_vermelho="\033[31m"
 fecha_cor="\033[m"
 
@@ -33,7 +39,6 @@ RSYNC_PARAMS="ax"					# parametros padrões e obrigatórios para o rsync
 CONF_VERBOSE="0"					# config: Verbose
 CONF_PROGRESSO="0"					# config: Progresso
 CONF_DELETE="0"						# config: Delete
-CONF_CHECKSUM="0"					# config: Checksum
 
 # Variaveis auxiliares
 CHAVES=""							# pega todas as chaves do arquivo de configuração
@@ -46,48 +51,48 @@ function validacoes(){
 	# verificando se o arquivo de configuração existe
 	# TODO: criar um arquivo de configuração padrão, caso não exista
 	if [ ! -e "$CONFIG" ];then
-		print_error ""$CONFIG" não existe"
+		print_erro ""$CONFIG" não existe"
 		exit 1
 	fi
 
 	# garantindo que o diretorio de origem eh diferente do diretorio de destino
 	if [ "$ORIGEM" = $DESTINO ];then
-		print_error "diretorio de origem deve ser diferente do diretorio de destino"
+		print_erro "diretorio de origem deve ser diferente do diretorio de destino"
 		exit 1
 	fi
 
 	# verificando se a origem existe
 	if [ ! -e "$ORIGEM" ];then
-		print_error ""$ORIGEM" não existe"
+		print_erro ""$ORIGEM" não existe"
 		exit 1
 	fi
 
 	# verificando se o destino existe
 	if [ ! -e "$DESTINO" ];then
-		print_error ""$DESTINO" não existe"
+		print_erro ""$DESTINO" não existe"
 		exit 1
 	fi
 
 	# verificando se o destino é um diretorio
 	if [ ! -d "$DESTINO" ];then
-		print_error ""$DESTINO" não é um diretorio"
+		print_erro ""$DESTINO" não é um diretorio"
 		exit 1
 	fi
 }
 
 # imprime msg amarelo
 function print_info(){
-	echo -e "${cor_amarelo}"$1"${fecha_cor}"
+	printf "${cor_amarelo}$1${fecha_cor}\n"
 }
 
 # imprime msg verde
 function print_success(){
-	echo -e "${cor_verde}"$1"${fecha_cor}"
+	printf "${cor_verde}$1${fecha_cor}\n"
 }
 
 # imprime msg vermelho 
 function print_erro(){
-	echo -e "${cor_vermelho}$1${fecha_cor}"
+	printf "${cor_vermelho}$1${fecha_cor}\n"
 }
 
 # funcão para pegar o valor da chave procurada
@@ -102,7 +107,7 @@ function retorna_valor(){
 
 	# validação, para chave duplicada
 	if [ $(echo -e "$valor" | wc -l) -gt 1 ]; then
-		print_error "Erro: chave $PARAM duplicada, no arquivo de configuração"
+		print_erro "Erro: chave $PARAM duplicada, no arquivo de configuração"
 		exit 1
 	fi
 
@@ -126,6 +131,167 @@ function valida_chaves(){
 	echo "$chave"
 }
 
+# executar o backup
+function executar_backup(){
+
+	# lendo o arquivo que contem varios diretorio de origem.
+	# o nome passado tem que ser igual a 'origens.txt'.
+	# Tem que ser um arquivo, e tem que ser legivel
+	if [ "$ORIGEM" = 'origens.txt' -a -f "$ORIGEM" -a -r "$ORIGEM" ];then
+		# garantindo que o usuario o path sem a barra do final.
+		# Assim, o rsync copia a pasta toda e não o conteúdo dela todo jogado
+		sed -i 's/\/$//' origens.txt
+
+		ORIGENS="$(./"$PARSER_FILE" origens.txt)"
+		for ((i=1;i<=$(echo -e "$ORIGENS" | wc -l);i++));do
+			LINHA=$(echo -e "$ORIGENS" | sed -n "$i"p)
+			if [ ! -e "$LINHA" ];then
+				print_erro ""$LINHA" nao existe"
+				exit 1
+			elif [ ! -d "$LINHA" ];then
+				print_erro ""$LINHA" nao é um diretorio"
+				exit 1
+			elif [ ! -r "$LINHA" ];then
+				print_erro "não é possível ler "$LINHA""
+				exit 1
+			else
+				print_info "sincronizando "$LINHA""
+				rsync -$RSYNC_PARAMS "$LINHA" "$DESTINO" >> log/transf.log
+			fi
+		done
+		
+	# caso contrário, é um diretorio de origem unico
+	else
+		rsync -$RSYNC_PARAMS "$ORIGEM" "$DESTINO" >> log/transf.log
+	fi
+
+}
+
+# função que cria toa a pasta de logs
+function criar_logs(){
+
+	local tempo="$1"
+	local arquivos_copiados=""
+	
+	# criando o arquivo 'files.log'
+	# contém todos os arquivos salvos no backup
+	find "$DESTINO" -type f > log/files_total.log
+
+	# criando o arquivo 'files.log'
+	# Contém apenas os arquivos tranferidos nesse backup.
+	# sed: procura por todas as linhas que comecem com letra ou numero (^[a-zA-Z0-9]),
+	# seguido de quaquer coisa (.*), seguido de barra (\/), seguido de ponto (\.)
+	sed -n '/^[a-zA-Z0-9].*\/.*\./p;' log/transf.log > log/files.log
+
+	# sed: Adiciona a URL de $DESTINO no começo de cada linha.
+	# Ficando com a URL completa.
+	# Não fiz concatenando com o 'sed' de cima, por causa das aspas simples
+	sed -i "s,^,"$DESTINO"," log/files.log
+
+	# criando o arquivo 'info.log'.
+	# Adicionando a data do backup
+	echo "data_do_backup=$(date +%d-%m-%Y)" > log/info.log
+
+	# adicionando o tempo de duração do backup
+	echo "tempo_do_backup=$tempo" >> log/info.log
+
+	# adicionando o numero de arquivos copiados
+	# OBS: eu não usei o 'cat log/files.log | wc -l',
+	# pra evitar o uso do 'cat' em arquivos com muitas linhas
+	# esse 'sed' é a mesma coisa do 'wc -l'
+	arquivos_copiados=$(sed -n $= log/files.log)
+
+	if [ "$arquivos_copiados" == "" ];then
+		arquivos_copiados=0
+	fi
+
+	echo "arquivos_copiados=$arquivos_copiados" >> log/info.log
+
+	calcular_tamanho
+
+}
+
+# funcao que calcula o tempo de duração do backup
+function calcular_tempo(){
+	local tempo="$1"
+	local duracao=""
+	
+	if [ "$tempo" -eq 0 ];then 								# menor do que 1 segundo
+		duracao="menos de 1s"
+	elif [ "$tempo" -gt 3600 ];then 						# tempo em hora
+		duracao=""$(echo "scale=2; "$tempo"" / 3600 | bc)"h"
+	elif [ "$tempo" -gt 60 ];then 							# tempo em minutos
+		duracao=""$(echo "scale=2; "$tempo"" / 60 | bc)"m"
+	elif [ "$tempo" -gt 0 ];then 							# tempo em segundos
+		duracao=""$tempo"s"
+	fi
+	
+	echo "$duracao"
+
+}
+
+# função para calcular a quantidade de bytes tranferido (em GB)
+function calcular_tamanho(){
+	
+	local linha=""
+	local tamanho=""
+	local tamanho_linha=""
+	local tamanho_temp=""
+	local arquivo=""
+	local tamanho_arquivo=""
+	local tamanho_gigabyte=""
+	local arquivos_copiados=$(grep "arquivos_copiados" log/info.log | cut -d "=" -f2)
+
+	# se a quantidade de arquivos copiados for branco, então o $tamanho=0
+	if [ "$arquivos_copiados" == "0" ];then
+		tamanho=0
+	else
+		# se não, pegue todos os arquivos copiados + o tamanho deles (em KB)
+		for ((i=1;i<=$arquivos_copiados;i++)); do
+			linha=$(sed -n ""$i"p" log/files.log)
+			tamanho_linha=$(du $linha | awk '{print $1}' | sed 's/[A-Z]//')
+
+			# salve tudo em um arquivo temporario
+			echo "$linha-$tamanho_linha" >> log/temp.log
+		done
+	
+		# pegue a quantiade de linha do arquivo temporario
+		tamanho_temp=$(sed -n $= log/temp.log)
+
+		# calcule (tudo em GB)
+		for ((i=1;i<=$tamanho_temp;i++)); do
+			linha=$(sed -n ""$i"p" log/temp.log)
+			arquivo=$(grep $linha log/temp.log | cut -d "-" -f1)
+			tamanho_arquivo=$(grep $linha log/temp.log | cut -d "-" -f2)
+			
+			# se o tamanho for diferente de zero
+			if [ "$tamanho_arquivo" -ne 0 ];then
+				# divida tudo por '1024^2' pra transformar em GB
+				tamanho_gigabyte=$(echo "scale=4; $tamanho_arquivo / 1024^2" | bc)
+				# atualize o arquivo temporario com os valores corretos.
+				# sed: troque o '$tamanho_arquivo' (tamanho antigo) por '$tamanho_gigabyte' (tamanho novo).
+				# nessa conversão, valores menor que 1, o resutado fica assim por exemplo: ".0019".
+				# o segundo 'sed' é justamente pra colocar o zero que ta faltando, ficando assim: "0.0019"
+				sed -i "s/-"$tamanho_arquivo"$/-"$tamanho_gigabyte"/;s/-\.\([0-9]*$\)/-0\.\1/" log/temp.log
+			fi
+
+		done
+		
+		# somando tudo, e calculando o tamanho em GB.
+		# comando: O 'sed :' é igual ao 'cat', só pra evitar o uso do 'cat' em arquivos grandes.
+		# o 'sed' le o arquivo, e pega o tamanho certo pelo 'cut'.
+		# o 'paste -s' transforma tudo em uma linha só, separada por '\t'.
+		# o '-d"+"' transforma o delimitador (\t) para um "+", e joga isso pro 'bc' calcular
+		tamanho=$(sed : log/temp.log | cut -d "-" -f2 | paste -sd"+" | bc)
+	fi
+
+	# joga o resultado para o log/info.log
+	echo "gigabytes_transferidos=$tamanho" >> log/info.log
+
+	# deletando o arquivo temporario
+	rm log/temp.log
+}
+
 # Main
 # ----------------------------------------------------------------------------
 
@@ -137,48 +303,25 @@ CHAVES="$(./"$PARSER_FILE" "$CONFIG")"
 # consultando as chaves
 CONF_VERBOSE=$(retorna_valor "$CHAVES" "verbose")
 CONF_PROGRESSO=$(retorna_valor "$CHAVES" "progresso")
-CONF_CHECKSUM=$(retorna_valor "$CHAVES" "checksum")
 CONF_DELETE=$(retorna_valor "$CHAVES" "delete")
 
 # validando as chaves
 CONF_VERBOSE=$(valida_chaves "$CONF_VERBOSE" "vh")
 CONF_PROGRESSO=$(valida_chaves "$CONF_PROGRESSO" "P")
-CONF_CHECKSUM=$(valida_chaves "$CONF_DELETE" "c")
 CONF_DELETE=$(valida_chaves "$CONF_DELETE" "--delete")
 
 # agrupando todos os parametros do rsync
-RSYNC_PARAMS="$RSYNC_PARAMS$CONF_VERBOSE$CONF_PROGRESSO$CONF_CHECKSUM $CONF_DELETE"
-#print_success "executando o backup"
-print_info "executando o backup"
+RSYNC_PARAMS="$RSYNC_PARAMS$CONF_VERBOSE$CONF_PROGRESSO $CONF_DELETE"
 
-# lendo o arquivo que contem varios diretorio de origem.
-# o nome passado tem que ser igual a 'origens.txt'.
-# Tem que ser um arquivo, e tem que ser legivel
-if [ "$ORIGEM" = 'origens.txt' -a -f "$ORIGEM" -a -r "$ORIGEM" ];then
-	ORIGENS="$(./"$PARSER_FILE" origens.txt)"
-	for ((i=1;i<=$(echo -e "$ORIGENS" | wc -l);i++));do
-		LINHA=$(echo -e "$ORIGENS" | sed -n "$i"p)
-		if [ ! -e "$LINHA" ];then
-			print_error ""$LINHA" nao existe"
-			exit 1
-		elif [ ! -d "$LINHA" ];then
-			print_error ""$LINHA" nao é um diretorio"
-			exit 1
-		elif [ ! -r "$LINHA" ];then
-			print_error "não é possível ler "$LINHA""
-			exit 1
-		else
-			print_success "sincronizando com "$LINHA""
-			# FIXME dessa forma, ele irá copiar as pasta que estão dentro do 'origens.txt', mas se no destino
-			# conter algum arquivo do lado de fora dessas pastas, ele não irá ser excluído com o '--delete' do rsync.
-			# Caso o campo DELETE do 'backup_maker.config' estar ativo, deletar esses arquivos soltos na mão
-			rsync -$RSYNC_PARAMS "$LINHA" "$DESTINO"
-		fi
-	done
-	exit 0
-	
-# caso contrário, é um diretorio de origem unico
-else
-	rsync -$RSYNC_PARAMS "$ORIGEM" "$DESTINO"
-	exit 0
-fi
+# zerando a pasta de log a cada rodada
+rm -rf log/*
+
+antes=$(date +%s)
+executar_backup
+depois=$(date +%s)
+
+tempo_do_backup=$(calcular_tempo $(($depois-$antes)))
+
+criar_logs "$tempo_do_backup"
+
+print_success "backup feito com sucesso"
