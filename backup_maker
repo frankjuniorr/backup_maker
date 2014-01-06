@@ -145,12 +145,16 @@ function executar_backup(){
 		ORIGENS="$(./"$PARSER_FILE" origens.txt)"
 		for ((i=1;i<=$(echo -e "$ORIGENS" | wc -l);i++));do
 			LINHA=$(echo -e "$ORIGENS" | sed -n "$i"p)
+
+			# A $LINHA tem que existir
 			if [ ! -e "$LINHA" ];then
 				print_erro ""$LINHA" nao existe"
 				exit 1
+			# Tem que ser um diretorio
 			elif [ ! -d "$LINHA" ];then
 				print_erro ""$LINHA" nao é um diretorio"
 				exit 1
+			# Tem que ser legivel
 			elif [ ! -r "$LINHA" ];then
 				print_erro "não é possível ler "$LINHA""
 				exit 1
@@ -158,11 +162,30 @@ function executar_backup(){
 				print_info "sincronizando "$LINHA""
 				rsync -$RSYNC_PARAMS "$LINHA" "$DESTINO" >> log/transf.log
 			fi
+
 		done
 		
 	# caso contrário, é um diretorio de origem unico
 	else
-		rsync -$RSYNC_PARAMS "$ORIGEM" "$DESTINO" >> log/transf.log
+	
+		# mas tem que ser diretorio
+		if [ ! -d "$ORIGEM" ];then
+			print_erro ""$ORIGEM" nao é um diretorio"
+			exit 1
+		# tem que ser legivel
+		elif [ ! -r "$ORIGEM" ];then
+			print_erro "não é possível ler "$ORIGEM""
+			exit 1
+		# tem que existir
+		elif [ ! -e "$ORIGEM" ];then
+			print_erro ""$ORIGEM" nao existe"
+			exit 1
+		else
+			ORIGEM=$(echo "$ORIGEM" | sed 's/\/$//')
+			print_info "sincronizando "$ORIGEM""
+			rsync -$RSYNC_PARAMS "$ORIGEM" "$DESTINO" >> log/transf.log
+		fi
+
 	fi
 
 }
@@ -172,7 +195,7 @@ function criar_logs(){
 
 	local tempo="$1"
 	local arquivos_copiados=""
-	
+
 	# criando o arquivo 'files.log'
 	# contém todos os arquivos salvos no backup
 	find "$DESTINO" -type f > log/files_total.log
@@ -292,7 +315,9 @@ function calcular_tamanho(){
 	echo "gigabytes_transferidos=$tamanho" >> log/info.log
 
 	# deletando o arquivo temporario
-	rm log/temp.log
+	if [ -e log/temp.log ];then
+		rm log/temp.log
+	fi
 }
 
 # Main
@@ -317,7 +342,10 @@ CONF_DELETE=$(valida_chaves "$CONF_DELETE" "--delete")
 RSYNC_PARAMS="$RSYNC_PARAMS$CONF_VERBOSE$CONF_PROGRESSO $CONF_DELETE"
 
 # zerando a pasta de log a cada rodada
-rm -rf log/*
+rm -rf log/
+
+# criando a pasta de log
+mkdir log
 
 antes=$(date +%s)
 executar_backup
