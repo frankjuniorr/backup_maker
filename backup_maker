@@ -36,8 +36,8 @@ fecha_cor="\033[m"
 
 # Configurações padrões
 RSYNC_PARAMS="ax"					# parametros padrões e obrigatórios para o rsync
-CONF_VERBOSE="0"					# config: Verbose
-CONF_PROGRESSO="0"					# config: Progresso
+CONF_VERBOSE="vh"					# config: Verbose
+CONF_PROGRESSO="P"					# config: Progresso
 CONF_DELETE="0"						# config: Delete
 
 # Variaveis auxiliares
@@ -329,13 +329,9 @@ validacoes
 CHAVES="$(./"$PARSER_FILE" "$CONFIG")"
 
 # consultando as chaves
-CONF_VERBOSE=$(retorna_valor "$CHAVES" "verbose")
-CONF_PROGRESSO=$(retorna_valor "$CHAVES" "progresso")
 CONF_DELETE=$(retorna_valor "$CHAVES" "delete")
 
 # validando as chaves
-CONF_VERBOSE=$(valida_chaves "$CONF_VERBOSE" "vh")
-CONF_PROGRESSO=$(valida_chaves "$CONF_PROGRESSO" "P")
 CONF_DELETE=$(valida_chaves "$CONF_DELETE" "--delete")
 
 # agrupando todos os parametros do rsync
