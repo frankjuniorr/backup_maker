@@ -13,6 +13,21 @@
 # Versão: 1
 # ----------------------------------------------------------------------------
 
+# Configurações
+# ----------------------------------------------------------------------------
+
+# set:
+# -e: se encontrar algum erro, termina a execução imediatamente
+set -e
+
+# import da lib_alfred
+if [ -z "$LIB_ALFRED" ];then
+	echo '[ERRO] provalvelmente, a $LIB_ALFRED nao foi instalada'
+	exit 1
+else
+	source "$LIB_ALFRED"
+fi
+
 # Variáveis
 # ----------------------------------------------------------------------------
 # TODO: melhorar esse acesso aos arquivos de parser, e de configuração
@@ -27,12 +42,6 @@ DESTINO="$2"
 antes=""
 depois=""
 tempo_do_backup=""
-
-# cores
-cor_amarelo="\033[33m"
-cor_verde="\033[32m"
-cor_vermelho="\033[31m"
-fecha_cor="\033[m"
 
 # Configurações padrões
 RSYNC_PARAMS="ax"					# parametros padrões e obrigatórios para o rsync
@@ -51,48 +60,33 @@ function validacoes(){
 	# verificando se o arquivo de configuração existe
 	# TODO: criar um arquivo de configuração padrão, caso não exista
 	if [ ! -e "$CONFIG" ];then
-		print_erro ""$CONFIG" não existe"
+		lib_alfred-print_erro ""$CONFIG" não existe"
 		exit 1
 	fi
 
 	# garantindo que o diretorio de origem eh diferente do diretorio de destino
-	if [ "$ORIGEM" = $DESTINO ];then
-		print_erro "diretorio de origem deve ser diferente do diretorio de destino"
+	if [ $ORIGEM = $DESTINO ];then
+		lib_alfred-print_erro "diretorio de origem deve ser diferente do diretorio de destino"
 		exit 1
 	fi
 
 	# verificando se a origem existe
 	if [ ! -e "$ORIGEM" ];then
-		print_erro ""$ORIGEM" não existe"
+		lib_alfred-print_erro ""$ORIGEM" não existe"
 		exit 1
 	fi
 
 	# verificando se o destino existe
 	if [ ! -e "$DESTINO" ];then
-		print_erro ""$DESTINO" não existe"
+		lib_alfred-print_erro ""$DESTINO" não existe"
 		exit 1
 	fi
 
 	# verificando se o destino é um diretorio
 	if [ ! -d "$DESTINO" ];then
-		print_erro ""$DESTINO" não é um diretorio"
+		lib_alfred-print_erro "$DESTINO não é um diretorio"
 		exit 1
 	fi
-}
-
-# imprime msg amarelo
-function print_info(){
-	printf "${cor_amarelo}$1${fecha_cor}\n"
-}
-
-# imprime msg verde
-function print_success(){
-	printf "${cor_verde}$1${fecha_cor}\n"
-}
-
-# imprime msg vermelho 
-function print_erro(){
-	printf "${cor_vermelho}$1${fecha_cor}\n"
 }
 
 # funcão para pegar o valor da chave procurada
@@ -107,7 +101,7 @@ function retorna_valor(){
 
 	# validação, para chave duplicada
 	if [ $(echo -e "$valor" | wc -l) -gt 1 ]; then
-		print_erro "Erro: chave $PARAM duplicada, no arquivo de configuração"
+		lib_alfred-print_erro "Erro: chave $PARAM duplicada, no arquivo de configuração"
 		exit 1
 	fi
 
@@ -148,18 +142,18 @@ function executar_backup(){
 
 			# A $LINHA tem que existir
 			if [ ! -e "$LINHA" ];then
-				print_erro ""$LINHA" nao existe"
+				lib_alfred-print_erro ""$LINHA" nao existe"
 				exit 1
 			# Tem que ser um diretorio
 			elif [ ! -d "$LINHA" ];then
-				print_erro ""$LINHA" nao é um diretorio"
+				lib_alfred-print_erro ""$LINHA" nao é um diretorio"
 				exit 1
 			# Tem que ser legivel
 			elif [ ! -r "$LINHA" ];then
-				print_erro "não é possível ler "$LINHA""
+				lib_alfred-print_erro "não é possível ler "$LINHA""
 				exit 1
 			else
-				print_info "sincronizando "$LINHA""
+				lib_alfred-print_info "sincronizando "$LINHA""
 				rsync -$RSYNC_PARAMS "$LINHA" "$DESTINO" >> log/transf.log
 			fi
 
@@ -170,19 +164,19 @@ function executar_backup(){
 	
 		# mas tem que ser diretorio
 		if [ ! -d "$ORIGEM" ];then
-			print_erro ""$ORIGEM" nao é um diretorio"
+			lib_alfred-print_erro ""$ORIGEM" nao é um diretorio"
 			exit 1
 		# tem que ser legivel
 		elif [ ! -r "$ORIGEM" ];then
-			print_erro "não é possível ler "$ORIGEM""
+			lib_alfred-print_erro "não é possível ler "$ORIGEM""
 			exit 1
 		# tem que existir
 		elif [ ! -e "$ORIGEM" ];then
-			print_erro ""$ORIGEM" nao existe"
+			lib_alfred-print_erro ""$ORIGEM" nao existe"
 			exit 1
 		else
 			ORIGEM=$(echo "$ORIGEM" | sed 's/\/$//')
-			print_info "sincronizando "$ORIGEM""
+			lib_alfred-print_info "sincronizando "$ORIGEM""
 			rsync -$RSYNC_PARAMS "$ORIGEM" "$DESTINO" >> log/transf.log
 		fi
 
@@ -351,4 +345,4 @@ tempo_do_backup=$(calcular_tempo $(($depois-$antes)))
 
 criar_logs "$tempo_do_backup"
 
-print_success "backup feito com sucesso"
+lib_alfred-print_success "backup feito com sucesso"
