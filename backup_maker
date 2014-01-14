@@ -228,25 +228,6 @@ function criar_logs(){
 
 }
 
-# funcao que calcula o tempo de duração do backup
-function calcular_tempo(){
-	local tempo="$1"
-	local duracao=""
-	
-	if [ "$tempo" -eq 0 ];then 								# menor do que 1 segundo
-		duracao="menos de 1s"
-	elif [ "$tempo" -gt 3600 ];then 						# tempo em hora
-		duracao=""$(echo "scale=2; "$tempo"" / 3600 | bc)"h"
-	elif [ "$tempo" -gt 60 ];then 							# tempo em minutos
-		duracao=""$(echo "scale=2; "$tempo"" / 60 | bc)"m"
-	elif [ "$tempo" -gt 0 ];then 							# tempo em segundos
-		duracao=""$tempo"s"
-	fi
-	
-	echo "$duracao"
-
-}
-
 # função para calcular a quantidade de bytes tranferido (em GB)
 # FIXME acho que dá pra substituir essa função, pq a propria saida
 # do 'rsync' mostra a quantidade tranferida.
@@ -341,7 +322,7 @@ antes=$(date +%s)
 executar_backup
 depois=$(date +%s)
 
-tempo_do_backup=$(calcular_tempo $(($depois-$antes)))
+tempo_do_backup=$(lib_alfred-calcula_tempo $(($depois-$antes)))
 
 criar_logs "$tempo_do_backup"
 
